@@ -25,8 +25,12 @@ The interface follows python websockets: https://websockets.readthedocs.io/en/st
 
 It's not exact but close enough that they interoperate fine from what I can tell.  Both client and server interoprate.
 
+The implemnetation Just Worked(tm) with a WebSocket clinet connection created in Javascript, and a client and server connection from Python's websockets package.  I won't pretend it's compliant..more like complacent :).
+
 ### Phone Home
 If you run a websocket server elsewhere, change `phone_home` in `ws.py`, which attemps to phone home evecy 5 seconds.  If a connection is made, data will be sync'd to that location also.
+
+Run a `websockets` server somehwere and it should "just work (tm)".
 
 ## HTTP server notes
 I use a dict and a deferred async call for simple routing rather than serve data from the filesystem.  
