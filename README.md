@@ -7,6 +7,8 @@ It's really just an example of a webpage loaded from an ESP32 which connects bac
 ## Wow, the code is really undocumented and messy
 Yeah, I ripped the example out of a private project.  Sorry.  Maybe I'll update the docs over time, but tbh the project is intended as an example for people to roll their own stuff in composable units rather than a monolithic solution.  For example. I only serve static files, and I can serve JQuery by implementing chunked transfers for all the files.  Someone else might not want/need that at all.
 
+Massive thanks to Peter Hinch <https://github.com/peterhinch/micropython-async/tree/master/v3> and the Micropython team for the new asyncio stuff and great examples. 
+
 ## What to change to get it to work
 1) Chagne the wifi access point details in main.py
 2) If you want to use device as an access point, import the ap from controllers.py.  The interfaces are instanciated in one place so I can access them in various places.
