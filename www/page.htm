@@ -1,0 +1,320 @@
+<html>
+  <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
+    <style>
+body {
+  background-color: #A0A0F0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+}
+.card {
+  background-color: #FFFFFF;
+  margin: 0px 5px 5px 5px;
+  border-color: #000000;
+  border-style: solid;
+  border-color: black;
+  border-width: 1px;
+}
+.card-header {
+  background-color: #C0C0C0;
+  margin-bottom: 5px;
+  border-bottom: 1px;
+  border-bottom-style: solid;
+  padding-left: 5px;
+}
+.card-body {
+  padding-left: 5px;
+}
+#messages {
+  background-color: #EEEEEE;
+  font-family: Helvetica;
+  font-size: 10px;
+  overflow: auto;
+  min-height: 75px;
+  max-height: 75px;
+}
+#messages > div {
+  margin: 0px;
+  padding: 0px;
+}
+.error {
+  background-color: #FFA0A0;
+}
+table {
+  font-size: 12;
+}
+td {
+  text-align: center;
+  padding-left: 5px;
+}
+.key {
+  padding-right: 20px;
+  border-right: 1px;
+  border-right-style: dotted;
+}
+button {
+  margin: 5px 0px 5px 0px;
+}
+    </style>
+    <script>
+
+      function sanitize(string) {
+        const map = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#x27;',
+          "/": '&#x2F;',
+        };
+        const reg = /[&<>"'/]/ig;
+        return string.replace(reg, (match)=>(map[match]));
+      }
+
+function log(level, msg) {
+  $("#messages").append('<div class="' + level +'">' + sanitize(msg) + '</div>');
+  $("#messages").scrollTop($("#messages")[0].scrollHeight);
+}
+
+function update(key, value) {
+  switch (key) {
+    case "info":
+      log("info", value);
+      break;
+    case "error":
+      log("error", value);
+      break;
+    case "fake_interface/msg":
+      $("#fake_interface_messages").append('<div class="packet">' + sanitize(value) + '</div>');
+      break;
+    default:
+      sel = "#" + key.split("/").join("_");
+      $(sel).text(value);
+      $(sel).change()
+  }
+}
+
+class Device {
+  constructor(host) {
+    this.host = host;
+    this.connected = 0;
+    this.data = "";
+    this.send_q = [];
+  }
+
+  connect () {
+    let self = this;
+
+    this.socket = new WebSocket("ws://" + window.location.host + ":7777");
+
+    this.socket.onopen = function(e) {
+      self.connected = 1;
+      var ii;
+      var loops = self.send_q.length;
+      for (ii = 0; ii < loops; ii++) {
+        self.socket.send(self.send_q.shift());
+      };
+
+      self.send_q = [];
+    };
+
+    this.socket.onmessage = function(event) {
+      var data = JSON.parse(event.data);
+      const keys = Object.keys(data);
+
+      keys.forEach((key, index) => {update(key, data[key])});
+
+    };
+
+    this.socket.onclose = function(event) {
+      if (event.wasClean) {
+        alert(`[close] Connection closed=${event.code} reason=${event.reason}`);
+      } else {
+        alert('[close] Connection died');
+      };
+      self.connected = 0;
+    };
+
+    this.socket.onerror = function(error){
+      alert(`[error] ${error.message}`);
+    };
+  }
+
+  req (item) {
+    let out = JSON.stringify(['GET', item, []]);
+    if (this.connected) {
+      this.socket.send(out);
+    } else {
+      this.send_q.push(out);
+    };
+  }
+
+  cmd (item, params=[]) {
+    let out = JSON.stringify(['CMD', item, params]);
+    if (this.connected) {
+      this.socket.send(out);
+    } else {
+      this.send_q.push(out);
+    };
+  }
+
+};
+
+
+    </script>
+  </head>
+  <body>
+    <title>Device Configuration</title>
+    <div class="card" id="messages-card">
+      <div class="card-header" id="messages-card-header">Log</div>
+      <div class="card-body" id="messages">
+      </div>
+    </div>
+    <div class="card" id="device">
+      <div class="card-header" id="summary">Device Information</div>
+      <div class="card-body" id="summary=body">
+        <table>
+          <tr><td class="key">Device ID</td><td><span id="iam"></span></td></tr>
+          <tr><td class="key">Device Type</td><td><span id="dev"></span></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="card" id="wifi-card">
+      <div class="card-header" id="wifi-card-header">Wifi Configuration</div>
+      <div class="card-body" id="wifi-card-body">
+        <div class="card" id="wifi-ap-card">
+          <div class="card-header" id="wifi-ap-card-header">Access Point</div>
+          <div class="card-body" id="wifi-ap-card-body">
+            <table>
+              <tr><td class="key">Enabled</td><td><span id="wifi_ap_active"></span></td></tr>
+              <tr><td class="key">SSID</td><td><span id="wifi_ap_ssid"></span></td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="card" id=wifi-sta-card>
+          <div class="card-header" id="wifi-sta-card-header">Station</div>
+          <div class="card-body" id="wifi-sta-card-body">
+            <table>
+              <tr><td class="key">Enabled</td><td><span id="wifi_net_active"></span></td></tr>
+              <tr><td class="key">MAC</td><td><span id="wifi_net_mac"></span></td></tr>
+              <tr><td class="key">Connected</td><td><span id="wifi_net_connected"></span></td></tr>
+              <tr><td class="key">Connected to AP</td><td><span id="wifi_net_ap"></span></td></tr>
+              <tr><td class="key">IP</td><td><span id="wifi_net_ip"></span></td></tr>
+              <tr><td class="key">Gateway</td><td><span id="wifi_net_gw"></span></td></tr>
+              <tr><td class="key">DNS</td><td><span id="wifi_net_dns"></span></td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="card" id="wifi-stor-card">
+          <div class="card-header" id="wifi-stor-card-header">Stored Settings</div>
+          <div class="card-body" id="wifi-stor-card-body">
+            <table>
+              <tr><td class="key">Stored SSID:</td><td> <span id="wifi_stored_ssid"></span></td></tr>
+              <tr><td class="key">New SSID:</td><td><input type="text" id="ssid" name="ssid"></td></tr>
+              <tr><td class="key">Password: </td><td><input type="text" id="pass" name="pass"></td></tr>
+              <tr><td class="key">Last Test Result:</td><td><span id="wifi_test_result"></td></tr>
+            </table>
+            <button id="test_new_sta">Test</button>
+            <button id="store_new_sta">Save on Device</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="drivers-card">
+      <div class="card-header" id="drivers-card-header">Hardware Drivers</div>
+      <div class="card-body" id="drivers-card-body">
+      </div>
+      <div class="card" id="fake-interface-card">
+        <div class="card-header" id="driver-fake-interface-header">Fake Interface Example</div>
+        <div class="card-body" id="driver-fake-interface-body">
+          <table>
+            <tr><td class="key">Running</td><td><span id="fake_interface_running"></span></td></tr>
+          </table>
+          <button id="fake_interface_toggle">Start</button>
+          <div class="card", id="fake-interface-send-card">
+            <div class="card-header" id="fake-interface-send-header">Send Message</div>
+            <div class="card-body" id="fake-interface-send-body">
+              <input type="text" id="fake-interface-text" name="fake-interface-text" maxlength="100" /><br >
+              <button id="fake-interface-send-msg">Send</button>
+            </div>
+          </div>
+          <div class="card" id="fake-interface-messages-card">
+            <div class="card-header" id="fake-interface-messages-header">Received Messages</div>
+            <div class="card-body" id="fake_interface_messages">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="static/jquery.js" ></script>
+    <script>
+
+let device = new Device(window.location.host);
+
+$(function(){
+  $(".card-header").click(function(){
+    $(this).siblings().toggle();
+  });
+  device.connect();
+  log("info", "Requesting network parameters");
+  device.req('wifi');
+  log("info", "Requesting device drivers");
+  device.cmd('hal')
+
+  $("#fake_interface_toggle").click(function() {
+    if ($(this).text() == "Start") {
+      device.cmd('start_interface');
+      $(this).text("Stop");
+    } else {
+      device.cmd('stop_interface');
+      $(this).text("Start");
+    };
+  });
+
+  $("#interface_running").change(function() {
+    if ($("#interface_running").text() == "true") {
+      $("#fake_interface_toggle").text("Stop");
+    } else {
+      $("#fake_interface_toggle").text("Start");
+    };
+  });
+
+  $("#test_new_sta").click(function() {
+    msg = "This will disconnect the device from the server, and all connected clients."
+    msg += "\n\nThe device will attempt to reconnect to the stored network on failure."
+    msg += "\n\nYou will have to reload the page after this operation."
+    msg += "\n\nProceed?"
+    if (confirm(msg)) {
+      ssid = $("#ssid").val();
+      pword = $("#pass").val();
+      device.cmd("test_new_sta", [ssid, pword]);
+    } else {
+      console.log("Cancelled");
+    }
+  });
+
+  $("#store_new_sta").click(function() {
+    msg = "This will save the wifi credentials on the device, and it will not be able to remotely recover"
+    msg += "if they are incorrect."
+    msg += "\n\nThis will not force a reconnection, though they will be used on the reboot."
+    msg += "\n\nProceed?"
+    if (confirm(msg)) {
+      ssid = $("#ssid").val();
+      pword = $("#pass").val();
+      device.cmd("store_new_sta", [ssid, pword]);
+    }
+  });
+
+  $("#fake-interface-send-msg").click(function() {
+    msg = $("#fake-interface-text").val();
+    $("#fake-interface-text").val("");
+    device.cmd("send_message", [msg]);
+  });
+
+});
+    </script>
+  </body>
+</html>
