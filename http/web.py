@@ -23,7 +23,7 @@ async def send_file(writer, file):
     fstat = os.stat(file)
     fsize = fstat[6]
 
-    writer.write(b'HTTP/1.0 200 OK\r\n')
+    writer.write(b'HTTP/1.1 200 OK\r\n')
     writer.write(b'Content-Type: text/html\r\n')
     writer.write('Content-Length: {}\r\n'.format(fsize).encode('utf-8'))
     writer.write(b'Accept-Ranges: none\r\n')
@@ -41,6 +41,7 @@ async def send_file(writer, file):
             writer.write(b'\r\n')
             await writer.drain()
             gc.collect()
+    writer.write(b"0\r\n")
     writer.write(b"\r\n")
     await writer.drain()
     writer.close()
