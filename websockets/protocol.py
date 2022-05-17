@@ -6,7 +6,6 @@ import ure as re
 import ustruct as struct
 import urandom as random
 from ucollections import namedtuple
-import uasyncio
 
 
 # Opcodes
@@ -29,27 +28,31 @@ CLOSE_MISSING_EXTN = const(1010)
 CLOSE_BAD_CONDITION = const(1011)
 
 
-URL_RE = re.compile(r'ws://([A-Za-z0-9\-\.]+)(?:\:([0-9]+))?(/.+)?')
-URI = namedtuple('URI', ('hostname', 'port', 'path'))
+URL_RE = re.compile(r'(ws[s]?)://([A-Za-z0-9\-\.]+)(?:\:([0-9]+))?(/.+)?')
+URI = namedtuple('URI', ('proto', 'hostname', 'port', 'path'))
 
 
 def urlparse(uri):
     """Parse ws:// URLs"""
     match = URL_RE.match(uri)
     if match:
-        host, port, path = match.group(1), match.group(2), match.group(3)
+        proto, host, port, path = (match.group(1),
+                                   match.group(2),
+                                   match.group(3),
+                                   match.group(4))
         if port is None:
             port = 80
 
-        return URI(host, int(port), path)
+        return URI(proto, host, int(port), path)
 
 
-class Websocket:
+class Websocket():
     is_client = False
 
     def __init__(self, stream):
         self._stream = stream
         self.open = True
+        self.fragment = False
 
     def __enter__(self):
         return self
@@ -147,6 +150,7 @@ class Websocket:
         while self.open:
             try:
                 fin, opcode, data = await self.read_frame()
+                print("f: {}\no: {}\nd: {}".format(fin, opcode, data))
             except (ValueError, EOFError):
                 self._close()
                 return
@@ -177,7 +181,6 @@ class Websocket:
             await self._stream.drain()
 
     async def send(self, buf):
-
         if not self.open:
             return
 
@@ -193,6 +196,7 @@ class Websocket:
         await self._stream.drain()
 
     async def wait_closed(self):
+        # this is entire sequence is out of order
         await self._stream.drain()
         await self._stream.wait_closed()
         self.close()

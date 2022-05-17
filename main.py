@@ -1,21 +1,27 @@
-import uasyncio
-import webrepl
-from controllers import net
-from http.web import server
-from ws import add_client, call_home
-from websockets.server import serve
+import uasyncio as asyncio
+from websockets import client
 
 
-net.active(1)
-net.connect("My AP", "Password")
-webrepl.start(password="test")
+async def reader(ws):
+    print("reader")
+    while True:
+        async for msg in ws:
+            print(msg)
+
+
+async def writer(ws):
+    print("writer")
+    while True:
+        ws.send("This is a test")
+        await asyncio.sleep(1)
 
 
 async def main():
-    await uasyncio.start_server(server, '0.0.0.0', 80)
-    await serve(add_client, '0.0.0.0', 7777)
+    ws = await client.connect("wss://sharkparty.local:7777/TS001")
+    asyncio.create_task(reader(ws))
+    asyncio.create_task(writer(ws))
 
-uasyncio.create_task(call_home())
-loop = uasyncio.get_event_loop()
-loop.run_until_complete(main())
+
+loop = asyncio.get_event_loop()
+loop.create_task(main())
 loop.run_forever()

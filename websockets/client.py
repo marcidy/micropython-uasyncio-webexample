@@ -24,8 +24,15 @@ async def connect(uri):
     Connect a websocket.
     """
 
+    print("client connect")
     uri = urlparse(uri)
     ss, _ = await asyncio.open_connection(uri.hostname, uri.port)
+
+    if uri.proto == "wss":
+        print("trying ssl")
+        import ssl
+        ssl_sock = ssl.wrap_socket(ss.s)
+        ss.s = ssl_sock
 
     def send_header(header, *args):
         ss.write(header % args + '\r\n')
@@ -34,13 +41,21 @@ async def connect(uri):
     key = binascii.b2a_base64(bytes(random.getrandbits(8)
                                     for _ in range(16)))[:-1]
 
+    print("sending headers")
     send_header(b'GET %s HTTP/1.1', uri.path or '/')
+    await ss.drain()
     send_header(b'Host: %s:%s', uri.hostname, uri.port)
+    await ss.drain()
     send_header(b'Connection: Upgrade')
+    await ss.drain()
     send_header(b'Upgrade: websocket')
+    await ss.drain()
     send_header(b'Sec-WebSocket-Key: %s', key)
+    await ss.drain()
     send_header(b'Sec-WebSocket-Version: 13')
+    await ss.drain()
     send_header(b'Origin: http://localhost')
+    await ss.drain()
     send_header(b'')
 
     await ss.drain()
@@ -52,7 +67,12 @@ async def connect(uri):
 
     # We don't (currently) need these headers
     # FIXME: should we check the return key?
+    if uri.proto == "wss":
+        return WebsocketClient(ss)
+
     while header:
-        header = (await ss.readline())[:-2]
+        header = await ss.readline()
+        if header == b"\r\n":
+            break
 
     return WebsocketClient(ss)

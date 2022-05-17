@@ -25,6 +25,7 @@ def make_respkey(webkey):
 
 
 async def connect(reader, writer, cb):
+    print("in connect")
     webkey = None
 
     request = await reader.readline()
@@ -38,6 +39,7 @@ async def connect(reader, writer, cb):
         if header == b'' or header == b'\r\n':
             break
 
+        print(header)
         if header.startswith(b'Sec-WebSocket-Key:'):
             webkey = header.split(b":", 1)[1]
             webkey = webkey.strip()
@@ -49,6 +51,7 @@ async def connect(reader, writer, cb):
 
     respkey = make_respkey(webkey)
 
+    print("responding")
     writer.write(b"HTTP/1.1 101 Switching Protocols\r\n")
     writer.write(b"Upgrade: websocket\r\n")
     writer.write(b"Connection: Upgrade\r\n")
