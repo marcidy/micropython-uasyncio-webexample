@@ -12,7 +12,7 @@ Massive thanks to Peter Hinch <https://github.com/peterhinch/micropython-async/t
 ## What to change to get it to work
 1) Chagne the wifi access point details in main.py
 2) If you want to use device as an access point, import the ap from controllers.py.  The interfaces are instanciated in one place so I can access them in various places.
-3) ws.py has a `phone_home` coroutine which statically defines a server to try an contact. It looks goofy becuase I don't actually do it this way.  you could change this to pass an arg when instanciating the coroutine in main.py.
+3) ws.py has a `call_home` coroutine which statically defines a server to try an contact. It looks goofy becuase I don't actually do it this way.  you could change this to pass an arg when instanciating the coroutine in main.py.
 
 theoretically this will "just work" and you can navigate to `http://<device ip>/` and get a simple interface. At the bottom you can start the `fake_interface` task, send a message into it and receive a response (just echos the message.to_upper().
 
@@ -28,7 +28,7 @@ It's not exact but close enough that they interoperate fine from what I can tell
 The implemnetation Just Worked(tm) with a WebSocket clinet connection created in Javascript, and a client and server connection from Python's websockets package.  I won't pretend it's compliant..more like complacent :).
 
 ### Phone Home
-If you run a websocket server elsewhere, change `phone_home` in `ws.py`, which attemps to phone home evecy 5 seconds.  If a connection is made, data will be sync'd to that location also.
+If you run a websocket server elsewhere, change `call_home` in `ws.py`, which attemps to phone home every 5 seconds.  If a connection is made, data will be sync'd to that location also.
 
 Run a `websockets` server somehwere and it should "just work (tm)".
 
