@@ -1,1 +1,3 @@
 certs/*
+__pycache__/
+.coverage
