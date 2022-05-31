@@ -445,3 +445,230 @@ async def test_websocket_write_magic_length_127():
     await ws.send(in_data)
 
     assert s.sent_buf == out_buf
+
+
+# Websocket.protocol.recv are very similar to read_frame based testcases
+
+
+@pytest.mark.asyncio
+async def test_websocket_recv_text():
+    fin = 0x80
+    opcode = OP_TEXT
+    mask = 0x00
+    in_data = b'Hello'
+    length = len(in_data)
+
+    buf = bytes([
+        fin | opcode,
+        mask | length,
+        *in_data,
+    ])
+
+    s = Stream(buf)
+    ws = Websocket(s)
+
+    data = await ws.recv()
+
+    assert data == in_data.decode('utf-8')
+
+
+@pytest.mark.asyncio
+async def test_websocket_recv_bytes():
+    fin = 0x80
+    opcode = OP_BYTES
+    mask = 0x00
+    in_data = b'Hello'
+    length = len(in_data)
+
+    buf = bytes([
+        fin | opcode,
+        mask | length,
+        *in_data,
+    ])
+
+    s = Stream(buf)
+    ws = Websocket(s)
+
+    data = await ws.recv()
+
+    assert data == in_data
+
+
+@pytest.mark.asyncio
+async def test_websocket_recv_close():
+    fin = 0x80
+    opcode = OP_CLOSE
+    mask = 0x00
+    length = 0
+
+    buf = bytes([
+        fin | opcode,
+        mask | length,
+    ])
+
+    s = Stream(buf)
+    ws = Websocket(s)
+
+    data = await ws.recv()
+
+    assert not ws.open
+    assert s.sent_buf == b'\x88\x02\x03\xe8'
+
+
+@pytest.mark.asyncio
+async def test_websocket_recv_ping():
+    fin = 0x80
+    opcode = OP_PING
+    mask = 0x00
+    in_data = b'weeeeee'
+    length = len(in_data)
+
+    buf = bytes([
+        fin | opcode,
+        mask | length,
+        *in_data,
+    ])
+
+    s = Stream(buf)
+    ws = Websocket(s)
+
+    data = await ws.recv()
+
+    assert s.sent_buf == bytes([
+        0x80 | OP_PONG,
+        mask | length,
+        *in_data])
+
+
+@pytest.mark.asyncio
+async def test_websocket_recv_pong():
+    ''' testing recv doesn't raise, PONGs have no real reqs'''
+    fin = 0x80
+    opcode = OP_PONG
+    mask = 0x00
+    in_data = b'whatever'
+    length = len(in_data)
+
+    buf = bytes([
+        fin | opcode,
+        mask | length,
+        *in_data,
+    ])
+
+    s = Stream(buf)
+    ws = Websocket(s)
+
+    await ws.recv()
+
+
+@pytest.mark.asyncio
+async def test_websocket_recv_cont():
+    fin1 = 0x00
+    opcode1 = OP_TEXT
+    mask1 = 0x00
+    in_data1 = b"I'm a cont"
+    length1 = len(in_data1)
+
+    fin2 = 0x80
+    opcode2 = OP_CONT
+    mask2 = 0x00
+    in_data2 = b"inuation frame"
+    length2 = len(in_data2)
+
+    buf = bytes([
+        fin1 | opcode1,
+        mask1 | length1,
+        *in_data1,
+        fin2 | opcode2,
+        mask2 | length2,
+        *in_data2,
+    ])
+
+    s = Stream(buf)
+    ws = Websocket(s)
+
+    out = await ws.recv()
+
+    assert out == (in_data1 + in_data2).decode('utf-8')
+
+
+@pytest.mark.asyncio
+async def test_websocket_raises_on_bad_opcode():
+    fin = 0x80
+    opcode = 255
+    mask = 0x00
+    in_data = b'blah'
+    length = len(in_data)
+
+    buf = bytes([
+        fin | opcode,
+        mask | length,
+        *in_data,
+    ])
+
+    s = Stream(buf)
+    ws = Websocket(s)
+
+    with pytest.raises(ValueError) as exc_info:
+        await ws.recv()
+
+        assert exc_info.value.args[0] == opcode
+
+
+@pytest.mark.asyncio
+async def test_websocket_asyncio_interfaces():
+    test_msgs = [
+        'hello',
+        'how are you',
+        'find thanks',
+        'goodbye']
+
+    s = Stream()
+    ws = Websocket(s)
+    # borrow send ot create frames for messages
+    for msg in test_msgs:
+        await ws.send(msg)
+
+    s.read_buf, s.sent_buf = s.sent_buf, b''
+
+    out = []
+
+    async for msg in ws:
+        out.append(msg)
+
+    assert out == test_msgs
+
+@pytest.mark.asyncio
+async def test_websocket_context_manager_interface():
+    test_msgs = [
+        'hello',
+        'how are you',
+        'find thanks',
+        'goodbye']
+
+    s = Stream()
+    ws = Websocket(s)
+
+    for msg in test_msgs:
+        await ws.send(msg)
+
+    s.read_buf, s.sent_buf = s.sent_buf, b''
+    out = []
+
+    with ws as f:
+        async for msg in ws:
+            out.append(msg)
+
+    assert not ws.open
+    assert test_msgs == out
+
+
+@pytest.mark.asyncio
+async def test_websocket_send_wrong_object():
+    o = object()
+    s = Stream()
+    ws = Websocket(s)
+
+    with pytest.raises(TypeError):
+        await ws.send(o)
+
