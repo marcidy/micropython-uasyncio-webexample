@@ -24,7 +24,48 @@ def print_frame(frame):
             print(f"{b:08b}")
 
 
+class Stream:
+    ''' Mimics an uasyncio.stream.Stream which underlies websockets'''
+    def __init__(self,
+                 read_buf=b'',
+                 write_buf=b'',
+                 throw=None,
+                 throw_on_byte=0,
+                 ):
+        self.read_buf = read_buf
+        self.write_buf = write_buf
+        self.sent_buf = b''
+        self.throw_on_byte = throw_on_byte
+        self.throw = throw
+        self.bytes_read = 0
+
+    async def readexactly(self, n):
+        if self.throw:
+            if (self.bytes_read + n >= self.throw_on_byte):
+                raise self.throw
+
+        if n > len(self.read_buf):
+            raise ValueError
+
+        out = self.read_buf[0:n]
+        self.read_buf = self.read_buf[n:]
+        return out
+
+    async def drain(self):
+        self.sent_buf += self.write_buf
+        self.write_buf = b''
+
+    def write(self, in_buf):
+        self.write_buf += in_buf
+
+    async def wait_closed(self):
+        if self.throw:
+            raise self.throw
+
+
 def test_urlparse():
+    # Note: Shouldn't site.tld:port, site.tld, and site.tld/ all have the path
+    # "/"?
     tcs = (
         (
             "ws://localhost",
@@ -47,42 +88,6 @@ def test_urlparse():
         assert uri.hostname == result[1]
         assert uri.port == result[2]
         assert uri.path == result[3]
-
-
-class Stream:
-    def __init__(self,
-                 read_buf=b'',
-                 write_buf=b'',
-                 throw=None,
-                 throw_on_byte=0,
-                 ):
-        self.read_buf = read_buf
-        self.write_buf = write_buf
-        self.throw_on_byte = throw_on_byte
-        self.throw = throw
-        self.bytes_read = 0
-
-    async def readexactly(self, n):
-        if self.throw:
-            if (self.bytes_read + n >= self.throw_on_byte):
-                raise self.throw
-
-        if n > len(self.read_buf):
-            raise ValueError
-
-        out = self.read_buf[0:n]
-        self.read_buf = self.read_buf[n:]
-        return out
-
-    async def drain(self):
-        self.write_buf = b''
-
-    def write(self, in_buf):
-        self.write_buf += in_buf
-
-    async def wait_closed(self):
-        if self.throw:
-            raise self.throw
 
 
 def test_websocket_create():
@@ -338,3 +343,105 @@ async def test_websocket_throw_other_error_in_read_frame():
 
     with pytest.raises(ValueError):
         fin, opcode, data = await ws.read_frame()
+
+
+@pytest.mark.asyncio
+async def test_websocket_write_client_text():
+    in_buf = bytes([0x81, 0x05, 0x48, 0x65, 0x6c, 0x6c, 0x6f])
+
+    s = Stream()
+    ws = Websocket(s)
+
+    await ws.send('Hello')
+    assert s.sent_buf == in_buf
+
+
+@pytest.mark.asyncio
+async def test_websocket_write_client_bytes():
+    out_buf = bytes([0x82, 0x05, 0x48, 0x65, 0x6c, 0x6c, 0x6f])
+
+    s = Stream()
+    ws = Websocket(s)
+
+    await ws.send(b'Hello')
+    assert s.sent_buf == out_buf
+
+
+@pytest.mark.asyncio
+@patch('websockets.protocol.random')
+async def test_websocket_write_masked(random):
+
+    # mask uses random bits, but we aren't testing random, just masking
+    fin = 0x80
+    not_rand = int(b'A55AE8E8', 16)
+    masked = 0x80
+    length = 0x05
+    mask = not_rand.to_bytes(4, 'big')
+    def getrandbits(x):
+        if x == 32:
+            return not_rand
+        else:
+            raise ValueError()
+
+    random.getrandbits = getrandbits
+
+    # expectation
+    out_buf = bytes([
+        fin | OP_TEXT,
+        masked | length,
+        *mask,
+        0xED, 0x3F, 0x84, 0x84, 0xCA # masked Hello
+    ])
+    s = Stream()
+    ws = Websocket(s)
+    ws.is_client = True  # client triggers masking
+
+    await ws.send('Hello')
+
+    assert s.sent_buf == out_buf
+
+
+@pytest.mark.asyncio
+async def test_websocket_write_magic_lenght_126():
+    in_data = b'f'*255
+    fin = 0x80
+    opcode = OP_BYTES
+    mask = 0x00
+    actual_length = len(in_data).to_bytes(2, 'big')
+
+    out_buf = bytes([
+        fin | opcode,
+        mask | 126,
+        *actual_length,
+        *in_data,
+    ])
+
+    s = Stream()
+    ws = Websocket(s)
+
+    await ws.send(in_data)
+
+    assert s.sent_buf == out_buf
+
+
+@pytest.mark.asyncio
+async def test_websocket_write_magic_length_127():
+    in_data = "x" * 70000
+    fin = 0x80
+    opcode = OP_TEXT
+    mask = 0x00
+    actual_length = len(in_data).to_bytes(8, 'big')
+
+    out_buf = bytes([
+        fin | opcode,
+        mask | 127,
+        *actual_length,
+        *(in_data.encode('utf-8')),
+    ])
+
+    s = Stream()
+    ws = Websocket(s)
+
+    await ws.send(in_data)
+
+    assert s.sent_buf == out_buf
