@@ -13,6 +13,7 @@ from websockets.protocol import(
     OP_PING,
     OP_PONG,
 )
+from utils import Stream
 
 
 def print_frame(frame):
@@ -24,43 +25,43 @@ def print_frame(frame):
             print(f"{b:08b}")
 
 
-class Stream:
-    ''' Mimics an uasyncio.stream.Stream which underlies websockets'''
-    def __init__(self,
-                 read_buf=b'',
-                 write_buf=b'',
-                 throw=None,
-                 throw_on_byte=0,
-                 ):
-        self.read_buf = read_buf
-        self.write_buf = write_buf
-        self.sent_buf = b''
-        self.throw_on_byte = throw_on_byte
-        self.throw = throw
-        self.bytes_read = 0
-
-    async def readexactly(self, n):
-        if self.throw:
-            if (self.bytes_read + n >= self.throw_on_byte):
-                raise self.throw
-
-        if n > len(self.read_buf):
-            raise ValueError
-
-        out = self.read_buf[0:n]
-        self.read_buf = self.read_buf[n:]
-        return out
-
-    async def drain(self):
-        self.sent_buf += self.write_buf
-        self.write_buf = b''
-
-    def write(self, in_buf):
-        self.write_buf += in_buf
-
-    async def wait_closed(self):
-        if self.throw:
-            raise self.throw
+# class Stream:
+#     ''' Mimics an uasyncio.stream.Stream which underlies websockets'''
+#     def __init__(self,
+#                  read_buf=b'',
+#                  write_buf=b'',
+#                  throw=None,
+#                  throw_on_byte=0,
+#                  ):
+#         self.read_buf = read_buf
+#         self.write_buf = write_buf
+#         self.sent_buf = b''
+#         self.throw_on_byte = throw_on_byte
+#         self.throw = throw
+#         self.bytes_read = 0
+#
+#     async def readexactly(self, n):
+#         if self.throw:
+#             if (self.bytes_read + n >= self.throw_on_byte):
+#                 raise self.throw
+#
+#         if n > len(self.read_buf):
+#             raise ValueError
+#
+#         out = self.read_buf[0:n]
+#         self.read_buf = self.read_buf[n:]
+#         return out
+#
+#     async def drain(self):
+#         self.sent_buf += self.write_buf
+#         self.write_buf = b''
+#
+#     def write(self, in_buf):
+#         self.write_buf += in_buf
+#
+#     async def wait_closed(self):
+#         if self.throw:
+#             raise self.throw
 
 
 def test_urlparse():
