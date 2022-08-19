@@ -42,7 +42,7 @@ These settings are used to identify the device, start an access point, and conne
 local access point as a wifi station.  Angle brackets mean fill this information in.
 Feel free to change anything.  This file is checked on boot in all cases.
 
-Look in `controllers.py` to see how these settings are consumed.
+Look in ``controllers.py`` to see how these settings are consumed.
 
 network.json::
 
@@ -102,9 +102,9 @@ app.json::
     }
 
 
-The value associated with "app" will be loaded by the application loading in `main.py`.  
-This value must exists as a key in the file, whose values represt configuration for
-that app.
+The value associated with "app" will be loaded by the application loading in 
+``main.py``.  This value must exists as a key in the file, whose values represt 
+configuration for that app.
 
 /certs
 ------
@@ -131,9 +131,9 @@ The networking interface initialization "works" with micropython v1.19.1.  Using
 soft-resets (ctrl-D) can cause some errors to be thrown but the initial connection
 should be robust.  Monitoring the connection is not implemented.
 
-The `init()` function is called on boot to connect the interfaces.
+The ``init()`` function is called on boot to connect the interfaces.
 
-The `recovery()` function is called when booting fails or the application exits
+The ``recovery()`` function is called when booting fails or the application exits
 with an unhandled exception.
 
 /main.py
@@ -141,8 +141,8 @@ with an unhandled exception.
 main.py does a lot of things differently from how standard python is taught.  This
 is because it's more systems programming than application programming.
 
-A default `app_main(args)` is defined whose purpose is to run if the import
-of the desired application's `app_main` fails.  All applications (in this
+A default ``app_main(args)`` is defined whose purpose is to run if the import
+of the desired application's ``app_main`` fails.  All applications (in this
 scheme anyways) have the following structure::
 
     apps.<application>.main.app_main
@@ -169,9 +169,9 @@ constructured and run through "exec()"::
 Exceptions aren't handled, just printed.  This is becuase there's a severe
 unexpected error: the app we want to load isn't loading.
 
-This is why `app_main` was defined.  If the app loaded, `app_main` would point 
+This is why ``app_main`` was defined.  If the app loaded, ``app_main`` would point 
 to the application we want to run.  Since it wasn't loaded, it defaults to run
-the `recovery()` function as defined::
+the ``recovery()`` function as defined::
 
     def app_main(args):
         ''' a 'default' app_main function which is called if the import from apps
@@ -192,7 +192,7 @@ Now app_main is run::
         recovery()
 
 In this case, a KayboardInterrupt will drop to the shell, while the other two main
-classes of exceptions will cause `recovery()` to run.
+classes of exceptions will cause ``recovery()`` to run.
 
 The application loader does not know or care about the application.  The application
 ought to handle it's own exceptions.  If an excepetion is raised to here, the best
@@ -212,7 +212,7 @@ Some helpers, like what to do for recovery and loading config files only once.
 ^^^^^^^^^^^^^^^^
 Reads the configuration and launches a websocket server which repeats back to what you send.
 
-Useful for testing as it's simple.  Use `scripts/echo_client.py` to interact with it from a 
+Useful for testing as it's simple.  Use ``scripts/echo_client.py`` to interact with it from a 
 different machine on the same network.  Make sure the server ip and port match in both.
 
 /apps/demo
