@@ -75,3 +75,15 @@ When things are working well, the device will connect with the name configured i
 When the device is connected to the device server, you can point a web page to the
 page server, and they will interact.  Multiple pages can be connected to a single
 device.
+
+
+device_server.log
+-----------------
+Not included, but is created by the device_server. You can watch the messages being 
+exchanged by inspecting this log file.
+
+
+server-gen.sh
+-------------
+creating keys for the eventual use of tls, which is currently blocked by memory
+consumption issues.
