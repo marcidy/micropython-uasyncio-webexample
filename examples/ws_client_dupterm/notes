@@ -1,0 +1,67 @@
+Who calls these functions?
+uio.IOBase gives read, write, and ioctl.  How about close?
+note that read maps to readinto
+
+extmod/uos_dupterm.c
+
+- mp_uos_dupterm(size_t n_args, const mp_obj_t *args)
+    - if 2 args, 2nd args is index, otherwise index is 0
+    - is index < 0 or index >= MICROPY_PY_OS_DUPTERM
+        - invalid index
+        - MICROPY_PY_OS_DUPTERM must be default terminal
+    - get previous dupterm object at index
+    - if it's NULL, return None
+    - if 
+        - first arg is None, set dupter_obj[idx] to NULL
+    - else
+        - check if object has read, write and ioctl
+        - set dupterm object at index to first arg
+    - return previous object from that index
+
+- mp_uos_dupter_tx_strn(const char *str, size_t len)
+    - called in:
+        - ports/esp32/mphalport.c:mp_hal_stdout_tx_strn
+
+    - loop over all indices in dupter_objs
+        - if object at index is NULL, continue
+
+        - if built with MICROPY_PY_UOS_DUPTERM_BULTIN_STREAM
+            - gets stream pointer for dupterm_object at index
+            - write the string
+        - else
+            - create nlr_buf_t # some kind of execution context?
+            - if nlr_push(&nlr) == 0 # i assume successful push
+                - call write
+                - call nlr_pop()  # pop out of the context?
+            - else
+                - deactivate the object at index, something wrong with writing string
+
+- mp_uos_dupterm_rx_chr(void)
+    - called in: ports/esp32/mouos.c:os_dupterm_notify
+
+    - for each object in dupterm_objs, reads 1 byte
+    - note that mp_stream->read maps to readinto
+
+- mp_uos_dupterm_poll(uintptr_t poll_flags)
+    - for each object in dupterm_objs:
+        - if null, continue
+        - if it's a builtin stream
+            - call ioctl(obj, MP_STREAM_POLL, poll_flags, errcode)
+        - else
+            - same but with nlr_buf context
+
+- mp_uos_deactivate(size_t dupterm_idx, const char *msg, mp_obj_t exc)
+    - if an exception is passed in, print it out
+    - call close on the object, ignoring errors from the close operation
+
+ports/esp32/moduos.c
+
+- os_dupterm_notify(mp_obj_t obj_in)
+    - calls mp_uos_dupterm_rx_chr, which returns bytes, until bytes < 0
+    - puts byte into the stdin ringbuffer
+
+
+so if I manage the call to dupterm_notify instead of using it as a call back, i can control when the 
+websocket.read is called.
+
+Just need to make websocket.read pop chars / bytes or something

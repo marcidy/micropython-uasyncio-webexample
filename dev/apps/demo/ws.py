@@ -2,7 +2,12 @@ import gc
 import uasyncio
 import json
 import time
-from controllers import net, ap, fake_interface
+from controllers import (
+    config,
+    net,
+    ap,
+    fake_interface,
+)
 from websockets import client
 
 
@@ -10,8 +15,8 @@ cid = 0
 clients = set()
 tasks = {}
 
-iam = "Device_1"
-dev = "ESP32"
+iam = config['device']['iam']
+dev = config['device']['dev']
 
 state = {
     "iam": iam,
@@ -214,10 +219,9 @@ async def add_client(ws, path):
             net.connect()
 
 
-async def call_home():
+async def call_home(ip_addr, port):
+    uri = "ws://{}:{}/{}".format(ip_addr, port, iam)
     connected = False
-    server = "mywebsocsket.server.com"
-    uri = "ws://" + server + ":7777/" + iam
     while True:
         if not connected:
             try:

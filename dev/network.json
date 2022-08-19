@@ -1,0 +1,22 @@
+{
+    "device": {
+        "iam": "Device_1",
+        "dev": "ESP32"
+    },
+    "ap": {
+        "essid": "upy-ap-test",
+        "authmode": 3,
+        "password": "testislonger",
+        "hidden": false
+    },
+    "sta": {
+        "ssid": "titopuente",
+        "pass": "testmatt"
+    },
+    "wsserver": {
+        "ip": "192.168.3.1",
+        "host": "mattarcidy.com",
+        "port": 7777,
+        "path": "TS001"
+    }
+}
