@@ -1,0 +1,6 @@
+[submodule "websocekts"]
+	path = websocekts
+	url = git@github.com:marcidy/micropython-uasyncio-websockets
+[submodule "http"]
+	path = http
+	url = git@github.com:marcidy/micropython-uasyncio-http
