@@ -1,3 +1,5 @@
 certs/*
 __pycache__/
 .coverage
+
+utils.py

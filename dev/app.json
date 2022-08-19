@@ -1,0 +1,21 @@
+{
+    "app": "demo",
+    "echoserver": {
+        "listen_addr": "0.0.0.0",
+        "listen_port": 7777
+    },
+    "demo": {
+        "http": {
+            "ip": "0.0.0.0",
+            "port": 80
+        },
+        "websocket": {
+            "ip": "0.0.0.0",
+            "port": 7777
+        },
+        "home": {
+            "ip": "192.168.3.1",
+            "port": 7770
+        }
+    }
+}

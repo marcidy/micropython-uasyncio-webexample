@@ -1,0 +1,6 @@
+websockets
+cryptography
+pytest
+pytest-pudb
+pytest-cov
+pytest-asyncio
