@@ -21,7 +21,7 @@ of the filesystem (i.e. as /http and /websockets) but as long as they are in you
 import path on the device, they ought to work. 
 
 note: I've added thses as submodules so cloning this repositroy and using
-``git submodule update --recursive`` ought to work.
+``git submodure init && git submodule update --recursive`` ought to work.
 
 
 /dev
