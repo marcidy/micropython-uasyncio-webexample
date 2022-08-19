@@ -18,9 +18,11 @@ Requirements
 You'll need the packages from https://github.com/marcidy/micropython-uasyncio-websockets
 and https://github.com/marcidy/micropython-uasyncio-http.  I install them at the root
 of the filesystem (i.e. as /http and /websockets) but as long as they are in your 
-import path on the device, they ought to work.
+import path on the device, they ought to work. 
 
-note: these repos are being reworked as well as this one.
+note: I've added thses as submodules so cloning this repositroy and using
+``git submodule update --recursive`` ought to work.
+
 
 /dev
 ----
