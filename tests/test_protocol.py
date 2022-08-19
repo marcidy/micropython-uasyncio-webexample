@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, "..")  # shadow official websockets
+sys.path.insert(0, "../dev")  # shadow official websockets
 
 from unittest.mock import patch
 import pytest

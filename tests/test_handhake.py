@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, "..") # shadow websockets from [v]env
+sys.path.insert(0, "../dev/") # shadow websockets from [v]env
 
 from unittest.mock import patch, MagicMock
 import pytest
