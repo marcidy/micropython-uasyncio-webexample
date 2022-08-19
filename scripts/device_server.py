@@ -57,24 +57,14 @@ async def add_device(websocket, path):
         await websocket.close()
 
 
-page_server = websockets.serve(
-    add_page, '127.0.0.1', 7771,
-    compression=None,
-    ping_interval=None,
-    ping_timeout=None)
-
-
-device_server = websockets.serve(
-    add_device, '0.0.0.0', 7770,
-    compression=None,
-    ping_interval=None,
-    ping_timeout=None)
+page_server = websockets.serve(add_page, '127.0.0.1', 7771, compression=None)
+device_server = websockets.serve(add_device, '0.0.0.0', 7770, compression=None)
 
 
 if __name__ == "__main__":
     log_setup()
     logging.info('Device Server restarted')
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
     loop.run_until_complete(device_server)
     loop.run_until_complete(page_server)
     loop.run_forever()
