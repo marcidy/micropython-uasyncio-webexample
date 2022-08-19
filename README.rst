@@ -27,7 +27,8 @@ note: I've added thses as submodules so cloning this repositroy and using
 /dev
 ----
 The /dev directory holds a working example.  Nothing *has* to be done this way, I just chose
-these methods as examples.
+these methods as examples.  My goal is that this directory represents the root of the device
+for this example.
 
 JSON config files
 -----------------
