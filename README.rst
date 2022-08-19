@@ -13,6 +13,15 @@ TLS support is currently blocked in micropython due to memory constraints.  I ha
 on these tools to support it at least client side and made some attempts for server side support
 but until the memory issues are resolved in micropython, the support won't be complete.
 
+Requirements
+------------
+You'll need the packages from https://github.com/marcidy/micropython-uasyncio-websockets
+and https://github.com/marcidy/micropython-uasyncio-http.  I install them at the root
+of the filesystem (i.e. as /http and /websockets) but as long as they are in your 
+import path on the device, they ought to work.
+
+note: these repos are being reworked as well as this one.
+
 /dev
 ----
 The /dev directory holds a working example.  Nothing *has* to be done this way, I just chose
