@@ -1,13 +1,13 @@
 Description
 ===========
-This repository has been reworked to be an example of how to use tools from my othe repositories.
+This repository has been reworked to be an example of how to use tools from my other repositories.
 
 I'm not realy clear the best way to package this stuff for micropython but also have a repo full 
-of documentation, examples, and tests.  This repo may be thati.  I'll stick the actual tools in 
+of documentation, examples, and tests.  This repo may be that.  I'll stick the actual tools in 
 other, small repos that just have the micropython focussed packages.  Comments welcome.
 
 
-Note about tls
+Note about TLS
 --------------
 TLS support is currently blocked in micropython due to memory constraints.  I have begun work
 on these tools to support it at least client side and made some attempts for server side support
